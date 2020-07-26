@@ -1,0 +1,3 @@
+spring.ldap.embedded:
+  port: 389
+  baseDn: "dc=springframework,dc=org"
