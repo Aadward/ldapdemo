@@ -1,5 +1,10 @@
 package com.syh.example.ldapdemo;
 
+import static org.assertj.core.api.Assertions.*;
+
+import java.util.List;
+
+import org.assertj.core.api.Assertions;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -32,8 +37,8 @@ public class LDAPServiceTest {
 			.userClassName("inetOrgPerson")
 			.userIdAttr("uid")
 			.groupBaseDn("dc=springframework,dc=org")
-			.groupClassName("organizationalUnit")
-			.groupNameAttr("ou")
+			.groupClassName("groupOfUniqueNames")
+			.groupNameAttr("cn")
 			.groupMembershipAttr("uniqueMember")
 			.build();
 	}
@@ -52,4 +57,11 @@ public class LDAPServiceTest {
 	public void authenticate_canNotFoundUser() throws Exception {
 		ldapService.authenticate(conf, "shenyuhang", "pwd");
 	}
+
+	@Test
+	public void findOrganizations() throws Exception {
+		List<Organization> organizations = ldapService.findOrganizations(conf);
+		assertThat(organizations).isNotEmpty();
+	}
+
 }

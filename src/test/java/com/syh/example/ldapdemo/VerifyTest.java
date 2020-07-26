@@ -121,8 +121,8 @@ public class VerifyTest {
 				}
 			})
 			.stream()
-			.map(map -> new Organization(map.get("dn").toString(), map.get("base").toString()
-				, map.get("base").toString()))
+			.map(map -> new Organization(LdapUtils.newLdapName(map.get("dn").toString()), map.get("base").toString()
+				, null))
 			.collect(Collectors.toList());
 
 		organizations.forEach(or -> System.out.println(or + "\n"));

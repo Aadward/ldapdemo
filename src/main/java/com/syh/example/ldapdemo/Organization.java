@@ -1,5 +1,9 @@
 package com.syh.example.ldapdemo;
 
+import java.util.List;
+
+import javax.naming.Name;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -9,9 +13,14 @@ import lombok.NoArgsConstructor;
 @Data
 public class Organization {
 
-	private String dn;
+	private Name dn;
 
-	private String rdn;
+	private String name;
 
-	private String base;
+	public Organization(Name dn, String name) {
+		this.dn = dn;
+		this.name = name;
+	}
+
+	private List<Organization> sub;
 }
