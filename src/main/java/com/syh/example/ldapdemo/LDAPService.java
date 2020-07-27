@@ -37,36 +37,6 @@ public class LDAPService {
 		return new Organizations(findAllOrganizationsAsList(conf, template));
 	}
 
-	private List<Organization> findAllOrganizationsAsList(LDAPConfiguration conf, LdapTemplate template) {
-		return template.search(
-			query()
-				.base(conf.getGroupBaseDn())
-				.where("objectclass").is(conf.getGroupClassName()),
-			new ContextMapper<Organization>() {
-				@Override
-				public Organization mapFromContext(Object ctx) throws NamingException {
-					DirContextAdapter adapter = (DirContextAdapter)ctx;
-					return new Organization(adapter.getDn(), adapter.getStringAttribute(conf.getGroupNameAttr()));
-				}
-			});
-	}
-
-	private List<User> findAllUsersAsList(LDAPConfiguration conf, LdapTemplate template) {
-		return template.search(
-			query()
-				.base(conf.getUserBaseDn())
-				.where("objectclass").is(conf.getUserClassName()),
-			new ContextMapper<User>() {
-				@Override
-				public User mapFromContext(Object ctx) throws NamingException {
-					DirContextAdapter adapter = (DirContextAdapter)ctx;
-					return new User(adapter.getDn(), adapter.getStringAttribute(conf.getUserIdAttr()),
-						adapter.getStringAttribute(conf.getUserNameAttr()));
-				}
-			}
-		);
-	}
-
 	public Map<Organization, List<User>> findUsersGroupByOrganization(LDAPConfiguration conf) {
 		LdapTemplate template = LDAPTemplateFactory.create(conf);
 
@@ -102,5 +72,35 @@ public class LDAPService {
 					.distinct()
 					.collect(Collectors.toList())));
 
+	}
+
+	private List<Organization> findAllOrganizationsAsList(LDAPConfiguration conf, LdapTemplate template) {
+		return template.search(
+			query()
+				.base(conf.getGroupBaseDn())
+				.where("objectclass").is(conf.getGroupClassName()),
+			new ContextMapper<Organization>() {
+				@Override
+				public Organization mapFromContext(Object ctx) throws NamingException {
+					DirContextAdapter adapter = (DirContextAdapter)ctx;
+					return new Organization(adapter.getDn(), adapter.getStringAttribute(conf.getGroupNameAttr()));
+				}
+			});
+	}
+
+	private List<User> findAllUsersAsList(LDAPConfiguration conf, LdapTemplate template) {
+		return template.search(
+			query()
+				.base(conf.getUserBaseDn())
+				.where("objectclass").is(conf.getUserClassName()),
+			new ContextMapper<User>() {
+				@Override
+				public User mapFromContext(Object ctx) throws NamingException {
+					DirContextAdapter adapter = (DirContextAdapter)ctx;
+					return new User(adapter.getDn(), adapter.getStringAttribute(conf.getUserIdAttr()),
+						adapter.getStringAttribute(conf.getUserNameAttr()));
+				}
+			}
+		);
 	}
 }
