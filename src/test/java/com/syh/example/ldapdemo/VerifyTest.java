@@ -91,7 +91,7 @@ public class VerifyTest {
 				}
 			})
 			.stream()
-			.map(map -> new User(map.get("uid").toString(), map.get("cn").toString()))
+			.map(map -> new User(null, map.get("uid").toString(), map.get("cn").toString()))
 			.collect(Collectors.toList());
 
 		list.forEach(user -> System.out.println(user + "\n"));

@@ -3,8 +3,9 @@ package com.syh.example.ldapdemo;
 import static org.assertj.core.api.Assertions.*;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
-import org.assertj.core.api.Assertions;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -36,10 +37,10 @@ public class LDAPServiceTest {
 			.userBaseDn("dc=springframework,dc=org")
 			.userClassName("inetOrgPerson")
 			.userIdAttr("uid")
-			.groupBaseDn("dc=springframework,dc=org")
-			.groupClassName("groupOfUniqueNames")
-			.groupNameAttr("cn")
-			.groupMembershipAttr("uniqueMember")
+			.userNameAttr("cn")
+			.groupBaseDn("ou=groups,dc=springframework,dc=org")
+			.groupClassName("organizationalUnit")
+			.groupNameAttr("ou")
 			.build();
 	}
 
@@ -60,8 +61,29 @@ public class LDAPServiceTest {
 
 	@Test
 	public void findOrganizations() throws Exception {
-		List<Organization> organizations = ldapService.findOrganizations(conf);
-		assertThat(organizations).isNotEmpty();
+		Organizations organizations = ldapService.findOrganizations(conf);
+		assertThat(organizations.size()).isEqualTo(2);
+
+		// check tree
+		System.out.println(organizations.toString());
+	}
+
+	@Test
+	public void findUsersByOrganizations() throws Exception {
+		Organizations organizations = ldapService.findOrganizations(conf);
+
+		Map<Organization, List<User>> users = ldapService.findUsersGroupByOrganization(conf);
+		assertThat(users).size().isEqualTo(2);
+
+		// check users
+
+		System.out.println("-----------------------------------");
+		System.out.println("Users Grouped By organization: \n");
+		System.out.println("-----------------------------------");
+		users.forEach((org, us) -> {
+			String usNames = String.join(",", us.stream().map(User::getUserName).collect(Collectors.toList()));
+			System.out.println(org.getName() + " : " + usNames + "\n");
+		});
 	}
 
 }

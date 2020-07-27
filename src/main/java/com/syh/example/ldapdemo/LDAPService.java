@@ -2,9 +2,11 @@ package com.syh.example.ldapdemo;
 
 import static org.springframework.ldap.query.LdapQueryBuilder.*;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.naming.Name;
 import javax.naming.NamingException;
@@ -12,9 +14,10 @@ import javax.naming.NamingException;
 import org.springframework.ldap.core.ContextMapper;
 import org.springframework.ldap.core.DirContextAdapter;
 import org.springframework.ldap.core.LdapTemplate;
+import org.springframework.ldap.support.LdapUtils;
 import org.springframework.stereotype.Component;
 
-import com.google.common.collect.Lists;
+import javafx.util.Pair;
 
 @Component
 public class LDAPService {
@@ -29,10 +32,13 @@ public class LDAPService {
 			pwd);
 	}
 
-	//TODO:
-	public List<Organization> findOrganizations(LDAPConfiguration conf) {
+	public Organizations findOrganizations(LDAPConfiguration conf) {
 		LdapTemplate template = LDAPTemplateFactory.create(conf);
-		Map<Name, Organization> organizations = template.search(
+		return new Organizations(findAllOrganizationsAsList(conf, template));
+	}
+
+	private List<Organization> findAllOrganizationsAsList(LDAPConfiguration conf, LdapTemplate template) {
+		return template.search(
 			query()
 				.base(conf.getGroupBaseDn())
 				.where("objectclass").is(conf.getGroupClassName()),
@@ -40,12 +46,61 @@ public class LDAPService {
 				@Override
 				public Organization mapFromContext(Object ctx) throws NamingException {
 					DirContextAdapter adapter = (DirContextAdapter)ctx;
-					return new Organization(adapter.getDn(), adapter.getStringAttributes(conf.getGroupNameAttr())[0]);
+					return new Organization(adapter.getDn(), adapter.getStringAttribute(conf.getGroupNameAttr()));
+				}
+			});
+	}
+
+	private List<User> findAllUsersAsList(LDAPConfiguration conf, LdapTemplate template) {
+		return template.search(
+			query()
+				.base(conf.getUserBaseDn())
+				.where("objectclass").is(conf.getUserClassName()),
+			new ContextMapper<User>() {
+				@Override
+				public User mapFromContext(Object ctx) throws NamingException {
+					DirContextAdapter adapter = (DirContextAdapter)ctx;
+					return new User(adapter.getDn(), adapter.getStringAttribute(conf.getUserIdAttr()),
+						adapter.getStringAttribute(conf.getUserNameAttr()));
+				}
+			}
+		);
+	}
+
+	public Map<Organization, List<User>> findUsersGroupByOrganization(LDAPConfiguration conf) {
+		LdapTemplate template = LDAPTemplateFactory.create(conf);
+
+		Map<Name, Organization> organizationMap =
+			findAllOrganizationsAsList(conf, template)
+				.stream()
+				.collect(Collectors.toMap(Organization::getDn, org -> org));
+
+		Map<Name, User> userMap =
+			findAllUsersAsList(conf, template)
+				.stream()
+				.collect(Collectors.toMap(User::getDn, user -> user));
+
+		return template.search(
+			query()
+				.base(conf.getGroupBaseDn())
+				.where("objectclass").is("groupOfUniqueNames"),
+			new ContextMapper<Pair<Organization, List<User>>>() {
+				@Override
+				public Pair<Organization, List<User>> mapFromContext(Object ctx) throws NamingException {
+					DirContextAdapter adapter = (DirContextAdapter)ctx;
+					Name group = adapter.getDn().getPrefix(adapter.getDn().size() - 1);
+					List<User> users = Arrays.stream(adapter.getStringAttributes("uniqueMember"))
+						.map(userDn -> userMap.get(LdapUtils.newLdapName(userDn)))
+						.collect(Collectors.toList());
+
+					return new Pair<>(organizationMap.get(group), users);
 				}
 			})
 			.stream()
-			.collect(Collectors.toMap(Organization::getDn, org -> org));
+			.collect(Collectors.toMap(Pair::getKey, Pair::getValue,
+				(users1, users2) -> Stream.concat(users1.stream(), users2.stream())
+					.distinct()
+					.collect(Collectors.toList())));
 
-		return Lists.newArrayList(organizations.values());
 	}
 }

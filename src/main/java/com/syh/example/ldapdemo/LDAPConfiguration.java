@@ -19,11 +19,13 @@ public class LDAPConfiguration {
 
 	private String userIdAttr;
 
+	private String userNameAttr;
+
 	private String groupBaseDn;
 
 	private String groupClassName;
 
 	private String groupNameAttr;
 
-	private String groupMembershipAttr;
+	// TODO: users in group should be wrapped as "groupOfUniqueNames"
 }
